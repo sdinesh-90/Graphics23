@@ -55,14 +55,14 @@ class MyWindow : Window {
          for (int i = rect.X; i < rect.Width + rect.X; i++) {
             (int x, int y, _) = Enumerable.Range (rect.Y, rect.Height)
                                           .Select (y => (i, y, Err: Err (i, y)))
-                                          .OrderBy (a => a.Err).First ();
+                                          .MinBy (a => a.Err);
             SetPixel (x, y, 255);
          }
          // In second pass, pick the best pixel in horizontal direction
          for (int j = rect.Y; j < rect.Height + rect.Y; j++) {
             (int x, int y, _) = Enumerable.Range (rect.X, rect.Width)
                                           .Select (x => (x, j, Err: Err (x, j)))
-                                          .OrderBy (a => a.Err).First ();
+                                          .MinBy (a => a.Err);
             SetPixel (x, y, 255);
          }
          mBmp.AddDirtyRect (rect);

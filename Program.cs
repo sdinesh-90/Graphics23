@@ -3,6 +3,7 @@ using System.Windows.Media;
 using System.Windows.Input;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using static System.Math;
 
 namespace A25;
 
@@ -25,6 +26,12 @@ class MyWindow : Window {
       image.Source = mBmp;
       Content = image;
       MouseDown += OnMouseDown;
+      DrawLine (100, 100, 200, 200);
+      DrawLine (100, 200, 200, 100);
+      DrawLine (100, 100, 200, 100);
+      DrawLine (200, 100, 200, 200);
+      DrawLine (200, 200, 100, 200);
+      DrawLine (100, 200, 100, 100);
    }
 
    void OnMouseDown (object sender, MouseButtonEventArgs e) {
@@ -36,105 +43,26 @@ class MyWindow : Window {
    Point mLastClicked;
    bool mDrawLine;
 
-   void DrawLine2 (int x1, int y1, int x2, int y2) {
-      double slope = (double)(y2 - y1) / (x2 - x1);
-      Console.WriteLine (slope);
-      int a = y1 - y2, b = x2 - x1, c = (x1 - x2) * y1 + (y2 - y1) * x1;
-      var rect = new Int32Rect (Math.Min (x1, x2), Math.Min (y1, y2),
-                                Math.Abs (x1 - x2) + 1, Math.Abs (y1 - y2) + 1);
-      try {
-         mBmp.Lock ();
-         mBase = mBmp.BackBuffer;
-         int x = rect.X, y = rect.Y;
-         int trx = rect.X + rect.Width - 1, try1 = rect.Y + rect.Height - 1;
-         // In first pass, pick the best pixel in vertical direction
-         for (int i = 0; i < rect.Width; i++) {
-            int minDist = int.MaxValue, rx = x, ry = y;
-            for (int j = 0; j < rect.Height; j++) {
-               int nx = i + rect.X, ny = j + rect.Y;
-               int dist = Math.Abs (OnLine (nx, ny));
-               if (dist < minDist) { minDist = dist; rx = nx; ry = ny; }
-            }
-            SetPixel (rx, ry, 255);
-         }
-         // In second pass, pick the best pixel in horizontal direction
-         for (int i = 0; i < rect.Height; i++) {
-            int minDist = int.MaxValue, rx = x, ry = y;
-            for (int j = 0; j < rect.Width; j++) {
-               int nx = j + rect.X, ny = i + rect.Y;
-               int dist = Math.Abs (OnLine (nx, ny));
-               if (dist < minDist) { minDist = dist; rx = nx; ry = ny; }
-            }
-            SetPixel (rx, ry, 255);
-         }
-         //SetPixel (x, y, 255);
-         //int cnt = 0;
-         //while (true) {
-         //   if (x == trx && y == try1) break;
-         //   Console.WriteLine ($"{x}, {y}");
-         //   if (cnt > rect.Width * rect.Height) throw new NotSupportedException ();
-         //   int minDist = int.MaxValue, rx = x, ry = y;
-         //   for (int i = 0; i < 5; i++) {
-         //      (int dx, int dy) = i switch {
-         //         0 => (0, 1),
-         //         1 => (1, 1),
-         //         2 => (1, 0),
-         //         3 => (1, -1),
-         //         4 => (0, -1),
-         //         _ => throw new NotImplementedException (),
-         //      };
-         //      int nx = x + dx, ny = y + dy;
-         //      int dist = (trx - nx) * (trx - nx) + (try1 - ny) * (try1 - ny);
-         //      dist = Math.Abs (OnLine (nx, ny));
-         //      if (dist < minDist) { minDist = dist; rx = nx; ry = ny; }
-         //   }
-         //   x = rx; y = ry;
-         //   SetPixel (x, y, 255);
-         //}
-         //for (int i = 0; i < rect.Width; i++) {
-         //   for (int j = 0; j < rect.Height; j++) {
-         //      int x = i + rect.X, y = j + rect.Y;
-         //      if ((i == 0 && j == 0) || OnLine (x, y)) SetPixel (x, y, 255);
-         //   }
-         //}
-         int dx1 = mBmp.PixelWidth, dy1 = mBmp.PixelHeight;
-         var fullRect = new Int32Rect (0, 0, dx1, dy1);
-         mBmp.AddDirtyRect (rect);
-      } finally {
-         mBmp.Unlock ();
-      }
-
-      int OnLine (int x, int y) {
-         int res = a * x + b * y + c;
-         return res;
-      }
-   }
-
    void DrawLine (int x1, int y1, int x2, int y2) {
-      int a = y1 - y2, b = x2 - x1, c = (x1 - x2) * y1 + (y2 - y1) * x1;
-      var rect = new Int32Rect (Math.Min (x1, x2), Math.Min (y1, y2),
-                                Math.Abs (x1 - x2) + 1, Math.Abs (y1 - y2) + 1);
+      // Get the line equation ax + by + c = 0
+      int a = y1 - y2, b = x2 - x1, c = x1 * y2 - x2 * y1;
+      var rect = new Int32Rect (Min (x1, x2), Min (y1, y2),
+                                Abs (x1 - x2) + 1, Abs (y1 - y2) + 1);
       try {
          mBmp.Lock ();
          mBase = mBmp.BackBuffer;
          // In first pass, pick the best pixel in vertical direction
-         for (int i = 0; i < rect.Width; i++) {                  
-            int minDist = int.MaxValue, x = rect.X, y = rect.Y;
-            for (int j = 0; j < rect.Height; j++) {
-               int nx = i + rect.X, ny = j + rect.Y;
-               int dist = Math.Abs (OnLineErr (nx, ny));
-               if (dist < minDist) { minDist = dist; x = nx; y = ny; }
-            }
+         for (int i = rect.X; i < rect.Width + rect.X; i++) {
+            (int x, int y, _) = Enumerable.Range (rect.Y, rect.Height)
+                                          .Select (y => (i, y, Err: Err (i, y)))
+                                          .OrderBy (a => a.Err).First ();
             SetPixel (x, y, 255);
          }
          // In second pass, pick the best pixel in horizontal direction
-         for (int i = 0; i < rect.Height; i++) {
-            int minDist = int.MaxValue, x = rect.X, y = rect.Y;
-            for (int j = 0; j < rect.Width; j++) {
-               int nx = j + rect.X, ny = i + rect.Y;
-               int dist = Math.Abs (OnLineErr (nx, ny));
-               if (dist < minDist) { minDist = dist; x = nx; y = ny; }
-            }
+         for (int j = rect.Y; j < rect.Height + rect.Y; j++) {
+            (int x, int y, _) = Enumerable.Range (rect.X, rect.Width)
+                                          .Select (x => (x, j, Err: Err (x, j)))
+                                          .OrderBy (a => a.Err).First ();
             SetPixel (x, y, 255);
          }
          mBmp.AddDirtyRect (rect);
@@ -142,7 +70,7 @@ class MyWindow : Window {
          mBmp.Unlock ();
       }
 
-      int OnLineErr (int x, int y) => a * x + b * y + c;
+      int Err (int x, int y) => Abs (a * x + b * y + c);
    }
 
    void DrawMandelbrot (double xc, double yc, double zoom) {

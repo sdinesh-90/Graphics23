@@ -32,6 +32,8 @@ class MyWindow : Window {
       DrawLine (200, 100, 200, 200);
       DrawLine (200, 200, 100, 200);
       DrawLine (100, 200, 100, 100);
+      DrawLine (0, 100, (int)Width - 1, 101);
+      DrawLine (100, 0, 101, (int)Height -1);
    }
 
    void OnMouseDown (object sender, MouseButtonEventArgs e) {
@@ -71,6 +73,31 @@ class MyWindow : Window {
       }
 
       int Err (int x, int y) => Abs (a * x + b * y + c);
+   }
+
+   void DrawLine2 (int x1, int y1, int x2, int y2) {
+      // Get the line equation y = mx + c;
+      double m = (double)(y2 - y1) / (x2 - x1), c = y1 - m * x1;
+      double mx = (double)(x2 - x1) / (y2 - y1), cx = x1 - mx * y1;
+
+      var rect = new Int32Rect (Min (x1, x2), Min (y1, y2),
+                                Abs (x1 - x2) + 1, Abs (y1 - y2) + 1);
+      try {
+         mBmp.Lock ();
+         mBase = mBmp.BackBuffer;
+         if (!double.IsInfinity (m))
+            for (int i = rect.X; i < rect.Width + rect.X; i++)
+               SetPixel (i, GetY (i), 255);
+         if (!double.IsInfinity (mx))
+            for (int j = rect.Y; j < rect.Height + rect.Y; j++)
+               SetPixel (GetX (j), j, 255);
+         mBmp.AddDirtyRect (rect);
+      } finally {
+         mBmp.Unlock ();
+      }
+
+      int GetY (int x) => (int)(m * x + c);
+      int GetX (int y) => (int)(mx * y + cx);
    }
 
    void DrawMandelbrot (double xc, double yc, double zoom) {

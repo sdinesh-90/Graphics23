@@ -8,5 +8,7 @@
     <Optimize>true</Optimize>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-
+  <ItemGroup>
+    <EmbeddedResource Include="Res\leaf-fill.txt" />
+  </ItemGroup>
 </Project>

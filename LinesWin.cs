@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Threading;
 using System.IO;
+using System.Reflection;
 
 namespace GrayBMP;
 
@@ -26,7 +27,8 @@ class LinesWin : Window {
       Content = image;
       mDX = mBmp.Width; mDY = mBmp.Height;
 
-      foreach (var line in File.ReadLines ("C:/etc/leaf-fill.txt")) {
+      using var sr = new StreamReader (Assembly.GetExecutingAssembly ().GetManifestResourceStream ("GrayBMP.Res.leaf-fill.txt"));
+      while (sr.ReadLine () is string line) {
          var pts = line.Split (' ').Select (int.Parse).ToList ();
          mPolyFill.AddLine (pts[0], pts[1], pts[2], pts[3]);
       }

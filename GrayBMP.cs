@@ -74,27 +74,19 @@ class GrayBMP {
       Dirty (x1, y1); Dirty (x2, y2);
    }
 
-   /// <summary>Draw a series of horizontal line given a y cooridnate using ordered x values</summary>
-   public void DrawHorizontalLines (int y, int gray, params int[] xValues) {
-      if (xValues.Length == 0) return;
-      if (xValues.Length % 2 != 0) throw new InvalidOperationException ("Even number of X cooridinate expected");
+   /// <summary>Draw a horizontal line</summary>
+   public void DrawHorizontalLine (int x1, int x2, int y, int gray) {
       // Check x1 and y1
-      Check (xValues[0], y);
+      Check (x1, y);
       // Check x2 only as y1 and y2 are same
-      if (xValues[^1] >= mWidth) Fatal ($"Pixel location out of range: ({xValues[^1]},{y})");
-      Begin ();
-      Dirty (xValues[0], y, xValues[^1], y);
+      if (x2 >= mWidth) Fatal ($"Pixel location out of range: ({x1},{y})");
+      Dirty (x1, y, x2, y);
       byte bGray = (byte)gray;
       unsafe {
-         byte* ptr = (byte*)(Buffer + y * Stride);
-         for (int i = 0; i < xValues.Length; i += 2) {
-            int x1 = xValues[i], x2 = xValues[i + 1];
-            byte* sPtr = ptr + x1;
-            for (int j = x1; j < x2; j++, sPtr++)
-               *sPtr = bGray;
-         }
+         byte* ptr = (byte*)(Buffer + y * Stride) + x1;
+         for (int j = x1; j <= x2; j++, ptr++)
+            *ptr = bGray;
       }
-      End ();
    }
 
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>

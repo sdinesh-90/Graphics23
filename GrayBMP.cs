@@ -77,8 +77,10 @@ class GrayBMP {
    /// <summary>Draw a series of horizontal line given a y cooridnate using ordered x values</summary>
    public void DrawHorizontalLines (int y, int gray, params int[] xValues) {
       if (xValues.Length == 0) return;
-      if (xValues.Length % 2 != 0) throw new InvalidOperationException ("Coorinates missing");
+      if (xValues.Length % 2 != 0) throw new InvalidOperationException ("Even number of X cooridinate expected");
+      // Check x1 and y1
       Check (xValues[0], y);
+      // Check x2 only as y1 and y2 are same
       if (xValues[^1] >= mWidth) Fatal ($"Pixel location out of range: ({xValues[^1]},{y})");
       Begin ();
       Dirty (xValues[0], y, xValues[^1], y);
@@ -86,8 +88,9 @@ class GrayBMP {
       unsafe {
          byte* ptr = (byte*)(Buffer + y * Stride);
          for (int i = 0; i < xValues.Length; i += 2) {
-            byte* sPtr = ptr + xValues[i];
-            for (int j = xValues[i]; j < xValues[i + 1]; j++, sPtr++)
+            int x1 = xValues[i], x2 = xValues[i + 1];
+            byte* sPtr = ptr + x1;
+            for (int j = x1; j < x2; j++, sPtr++)
                *sPtr = bGray;
          }
       }

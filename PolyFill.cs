@@ -20,7 +20,8 @@ class PolyFill {
             int x = GetIntersection (j, i);
             if (int.MaxValue != x) intersections.Add (x);
          }
-         bmp.DrawHorizontalLines (i, color, intersections.OrderBy (a => a).ToArray ());
+         if (intersections.Count > 0)
+            bmp.DrawHorizontalLines (i, color, intersections.OrderBy (a => a).ToArray ());
       }
    }
    #endregion
@@ -30,17 +31,19 @@ class PolyFill {
    // with horizontal line
    int GetIntersection (int idx, int scanY) {
       int x1 = mPoints[idx], y1 = mPoints[idx + 1], x2 = mPoints[idx + 2], y2 = mPoints[idx + 3];
+      // Check if scanY is in the range
       int minY = y1, maxY = y2;
       if (y1 > y2) (minY, maxY) = (y2, y1);
       double dScanY = scanY + 0.5;
-      // Check if scanY is in the range
       if (dScanY < minY || dScanY > maxY) return int.MaxValue;
+      int dx = x2 - x1;
       // Vartical line
-      if (x2 - x1 == 0) return x2;
+      if (dx == 0) return x2;
       // Horizontal line
-      if (y2 - y1 == 0) return int.MaxValue;
+      int dy = y2 - y1;
+      if (dy == 0) return int.MaxValue;
       // Line Equation y = mx + c
-      double m = (double)(y2 - y1) / (x2 - x1), c = y1 - m * x1;
+      double m = (double)dy / dx, c = y1 - m * x1;
       int x = (int)((dScanY - c) / m);
       int minX = x1, maxX = x2;
       if (x1 > x2) (minX, maxX) = (x2, x1);

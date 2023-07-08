@@ -74,6 +74,26 @@ class GrayBMP {
       Dirty (x1, y1); Dirty (x2, y2);
    }
 
+   /// <summary>Draw a series of horizontal line given a y cooridnate using ordered x values</summary>
+   public void DrawHorizontalLines (int y, int gray, params int[] xValues) {
+      if (xValues.Length == 0) return;
+      if (xValues.Length % 2 != 0) throw new InvalidOperationException ("Coorinates missing");
+      Check (xValues[0], y);
+      if (xValues[^1] >= mWidth) Fatal ($"Pixel location out of range: ({xValues[^1]},{y})");
+      Begin ();
+      Dirty (xValues[0], y, xValues[^1], y);
+      byte bGray = (byte)gray;
+      unsafe {
+         byte* ptr = (byte*)(Buffer + y * Stride);
+         for (int i = 0; i < xValues.Length; i += 2) {
+            byte* sPtr = ptr + xValues[i];
+            for (int j = xValues[i]; j < xValues[i + 1]; j++, sPtr++)
+               *sPtr = bGray;
+         }
+      }
+      End ();
+   }
+
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
    public void DrawLine (int x1, int y1, int x2, int y2, int gray) {
       Begin ();

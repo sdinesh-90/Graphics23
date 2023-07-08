@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.IO;
 
 namespace GrayBMP;
 
@@ -25,11 +26,14 @@ class LinesWin : Window {
       Content = image;
       mDX = mBmp.Width; mDY = mBmp.Height;
 
-      // Start a timer to repaint a new frame every 33 milliseconds
+      foreach (var line in File.ReadLines ("C:/etc/leaf-fill.txt")) {
+         var pts = line.Split (' ').Select (int.Parse).ToList ();
+         mPolyFill.AddLine (pts[0], pts[1], pts[2], pts[3]);
+      }
       DispatcherTimer timer = new () {
          Interval = TimeSpan.FromMilliseconds (100), IsEnabled = true,
       };
-      timer.Tick += NextFrame;
+      timer.Tick += NextFrame2;
    }
    readonly GrayBMP mBmp;
    readonly int mDX, mDY;
@@ -48,6 +52,12 @@ class LinesWin : Window {
       }
    }
    Random R = new ();
+
+   void NextFrame2 (object sender, EventArgs e) {
+      using (new BlockTimer ("Leaf"))
+         mPolyFill.Fill (mBmp, 255);
+   }
+   readonly PolyFill mPolyFill = new ();
 }
 
 class BlockTimer : IDisposable {

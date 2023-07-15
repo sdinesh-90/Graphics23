@@ -79,6 +79,50 @@ class GrayBMP {
    public void Dirty () 
       => Dirty (0, 0, Width - 1, Height - 1);
 
+   /// <summary>Draw thick line with the given thickness</summary>
+   public void DrawThickLine (int x0, int y0, int x1, int y1, int width, int color) {
+      if (width == 1) { DrawLine (x0, y0, x1, y1, color); return; }
+      mPF.Reset ();
+      foreach (var tline in GetThickPoly (new Line (new Point2 (x0, y0), new Point2 (x1, y1)), width)) {
+         var ((_x0, _y0), (_x1, _y1)) = (tline.A.Round (), tline.B.Round ());
+         mPF.AddLine (_x0, _y0, _x1, _y1);
+      }
+      mPF.Fill (this, color);
+   }
+   PolyFillFast mPF = new ();
+
+   //     f_________________________________e
+   //  g /|                                 |\ d
+   //   | |                                 | |
+   //  h| |                                 | |c
+   //    \|_________________________________|/
+   //     a                                 b
+   IEnumerable<Line> GetThickPoly (Line line, int width) {
+      const double HALFPI = PI / 2, ONETHIRDPI = PI / 3;
+      double thick = width / 2;
+      double ang = Atan2 (line.B.Y - line.A.Y, line.B.X - line.A.X);
+      ang -= HALFPI;
+      Point2 a = RadialMove (line.A, thick, ang), b = RadialMove (line.B, thick, ang);
+      yield return new Line (a, b);
+      Point2 c = RadialMove (line.B, thick, ang + ONETHIRDPI);
+      yield return new Line (b, c);
+      Point2 d = RadialMove (line.B, thick, ang + 2 * ONETHIRDPI);
+      yield return new Line (c, d);
+      Point2 e = RadialMove (line.B, thick, ang + PI);
+      yield return new Line (d, e);
+      Point2 f = RadialMove (line.A, thick, ang + PI);
+      yield return (new Line (e, f));
+      Point2 g = RadialMove (line.A, thick, ang - 2 * ONETHIRDPI);
+      yield return (new Line (f, g));
+      Point2 h = RadialMove (line.A, thick, ang - ONETHIRDPI);
+      yield return (new Line (g, h));
+      yield return (new Line (h, a));
+
+      static Point2 RadialMove (Point2 pt, double rad, double ang)
+         => new (pt.X + rad * Cos (ang), pt.Y + rad * Sin (ang));
+   }
+   
+
    /// <summary>Draws a line between the given endpoints, with the given shade of gray</summary>
    public void DrawLine (int x1, int y1, int x2, int y2, int gray) {
       if (y1 == y2) { DrawHorizontalLine (x1, x2, y1, gray); return; }

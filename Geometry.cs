@@ -130,11 +130,49 @@ class Polygon {
 class Drawing {
    public void Add (Polygon poly) {
       mPolys.Add (poly);
+      if (mHullPts != null) mHullPts = GetConvexHull (mHullPts.Concat (poly.Pts));
       mBound = new (); 
    }
 
    public IReadOnlyList<Polygon> Polys => mPolys;
    List<Polygon> mPolys = new ();
+
+   /// <summary>Enumerate convex hull of this drawing</summary>
+   public IEnumerable<(Point2 A, Point2 B)> EnumConvexHullLines (Matrix2 xfm) {
+      var hullPts = ConvexHull;
+      Point2 p0 = hullPts[^1] * xfm;
+      for (int i = 0, n = hullPts.Count; i < n; i++) {
+         Point2 p1 = hullPts[i] * xfm;
+         yield return (p0, p1);
+         p0 = p1;
+      }
+   }
+
+   public IReadOnlyList<Point2> ConvexHull
+      => mHullPts ??= GetConvexHull (Polys.SelectMany (a => a.Pts));
+   IReadOnlyList<Point2> mHullPts;
+
+   // Compute convex hull using Graham scan algorithm
+   static IReadOnlyList<Point2> GetConvexHull (IEnumerable<Point2> pts) {
+      Point2 lowerPt = pts.MinBy (a => a.Y);
+      var inPts = pts.Where (a => a != lowerPt).OrderBy (a => a.AngleTo (lowerPt)).ToList ();
+      // If we points less than or equal to 3, return the input points as convex hull
+      if (inPts.Count <= 2) return pts.ToList ();
+      List<Point2> hullPts = new () { lowerPt, inPts[0], inPts[1] };
+      for (int i = 2; i < inPts.Count; i++) {
+         Point2 pt = inPts[i];
+         while (hullPts.Count > 2) {
+            Point2 pt2 = hullPts[^1];
+            Vector2 v = pt2 - pt, v2 = pt - hullPts[^2];
+            // Right turn means we are done
+            if (v2.ZCross (v) < 0) break;
+            // Left turn means remove last point
+            hullPts.RemoveAt (hullPts.Count - 1);
+         }
+         hullPts.Add (pt);
+      }
+      return hullPts;
+   }
 
    public static Drawing operator * (Drawing d, Matrix2 m) {
       Drawing d2 = new Drawing ();
@@ -151,7 +189,7 @@ class Drawing {
    Bound2 mBound;
 
    public Bound2 GetBound (Matrix2 xfm) 
-      => new Bound2 (Polys.SelectMany (a => a.Pts.Select (p => p * xfm)));
+      => new (ConvexHull.Select (p => p * xfm));
 
    /// <summary>Enumerate all the lines in this drawing</summary>
    public IEnumerable<(Point2 A, Point2 B)> EnumLines (Matrix2 xfm) 
